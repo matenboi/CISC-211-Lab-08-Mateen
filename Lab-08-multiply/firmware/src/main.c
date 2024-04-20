@@ -42,7 +42,7 @@
 #include "definitions.h"                // SYS function prototypes
 
 /* RTC Time period match values for input clock of 1 KHz */
-#define PERIOD_50MS                            51
+#define PERIOD_50MS                             51
 #define PERIOD_500MS                            512
 #define PERIOD_1S                               1024
 #define PERIOD_2S                               2048
@@ -78,7 +78,9 @@ static int32_t tc[][2] = {
     {          2,          0},  // +,0
     {     -32768,     -32768},  // -,-
     { 0x00007FF3, 0xFFFF8001},  // +,-
-    { 0x00007FF1, 0x00007FF2}   // +,+
+    { 0x00007FF1, 0x00007FF2},  // +,+
+    {      32768,      32768},  // limits test
+    {     -32769,     -32769}   // limits test
 };
 
 static char * pass = "PASS";
@@ -224,30 +226,46 @@ static int testResult(int testNum,
     if( (myA > 32767) || (myA < -32768) || (myB > 32767) || (myB < -32768) )
     {
         myErrCheck = 1;
+        // myA = 0;
+        // myB = 0;
     }
-    int32_t myAbsA = abs(myA);
-    int32_t myAbsB = abs(myB);
-    int32_t myFinalProd = myA * myB;
-    int32_t myInitProd = abs(myFinalProd);
+    int32_t myAbsA = 0;
+    int32_t myAbsB = 0;
+    if (myErrCheck == 0)
+    {       
+         myAbsA = abs(myA);
+         myAbsB = abs(myB);
+    }
+    int32_t myFinalProd = 0;
+    int32_t myInitProd = 0;
     int32_t mySignBitA = 0;
     int32_t mySignBitB = 0;
-    if (myA < 0)
-    {
-        mySignBitA = 1;
-    }
-    if (myB < 0)
-    {
-        mySignBitB = 1;
-    }
-    
     int32_t myProdSign = 0;
-    if (((myA < 0) && (myB > 0)) || ((myA > 0) && (myB < 0)))
+    int32_t myMemA = myA; // the value the code under test was supposed to store to mem
+    int32_t myMemB = myB; // the value the code under test was supposed to store to mem
+    if(myErrCheck == 0)
     {
-        myProdSign = 1;
+        //myMemA = myA; // the value the code under test was supposed to store to mem
+        //myMemB = myB; // the value the code under test was supposed to store to mem
+        myFinalProd = myA * myB;
+        myInitProd = abs(myFinalProd);
+        if (myA < 0)
+        {
+            mySignBitA = 1;
+        }
+        if (myB < 0)
+        {
+            mySignBitB = 1;
+        }
+        if (((myA < 0) && (myB > 0)) || ((myA > 0) && (myB < 0)))
+        {
+            myProdSign = 1;
+        }
     }
     
-    check(myA, a_Multiplicand, passCount, failCount, &aCheck);
-    check(myB, b_Multiplier, passCount, failCount, &bCheck);
+    
+    check(myMemA, a_Multiplicand, passCount, failCount, &aCheck);
+    check(myMemB, b_Multiplier, passCount, failCount, &bCheck);
     check(myErrCheck, rng_Error, passCount, failCount, &rngCheck);
     check(mySignBitA, a_Sign, passCount, failCount, &aSignCheck);
     check(mySignBitB, b_Sign, passCount, failCount, &bSignCheck);
@@ -271,8 +289,8 @@ static int testResult(int testNum,
             "========= Test Number: %d =========\r\n"
             "test case INPUT: multiplier (a):   %11ld\r\n"
             "test case INPUT: multiplicand (b): %11ld\r\n"
-            "a check p/f:           %s\r\n"
-            "b check p/f:           %s\r\n"
+            "a mem check p/f:       %s\r\n"
+            "b mem check p/f:       %s\r\n"
             "input range check p/f: %s\r\n"
             "sign bit a check p/f:  %s\r\n"
             "sign bit b check p/f:  %s\r\n"
@@ -308,8 +326,8 @@ static int testResult(int testNum,
             initProdCheck,
             finalProdCheck,
             resultCheck,
-            myA, a_Multiplicand,
-            myB, b_Multiplier,
+            myMemA, a_Multiplicand,
+            myMemB, b_Multiplier,
             myErrCheck,rng_Error,
             mySignBitA, a_Sign,
             mySignBitB, b_Sign,
@@ -437,7 +455,7 @@ int main ( void )
             isRTCExpired = false;
             isUSARTTxComplete = false;
             snprintf((char*)uartTxBuffer, MAX_PRINT_LEN,
-                    "========= TESTS COMPLETE: Post-test Idle Cycle Number: %ld\r\n"
+                    "========= NEW TESTS COMPLETE: Post-test Idle Cycle Number: %ld\r\n"
                     "Summary of tests: %ld of %ld tests passed; score: %ld/20 pts\r\n"
                     "\r\n",
                     idleCount, totalPassCount, totalTests,
