@@ -37,3 +37,5 @@
 # added by VB
 *.elf
 *.hex
+/Lab-08-multiply/firmware/Lab-08-multiply.X/dist/
+/Lab-08-multiply/firmware/Lab-08-multiply.X/build/
